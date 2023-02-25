@@ -1,9 +1,9 @@
 package task
 
 import (
-	"context"
 	"encoding/json"
 	"homeiot_bluetooth/lib"
+	"reflect"
 	"regexp"
 	"time"
 
@@ -16,13 +16,14 @@ import (
 
 type DBTask struct {
 	client          influxdb2.Client
-	writeAPI        api.WriteAPIBlocking
+	writeAPI        api.WriteAPI
 	sensorDataCache map[string]*sensorDataCache
 	config          *DBConfig
 }
 type sensorDataCache struct {
 	date       time.Time
 	macaddress string
+	payload    []byte
 }
 
 func NewDBTask(config *DBConfig) *DBTask {
@@ -35,8 +36,8 @@ func NewDBTask(config *DBConfig) *DBTask {
 }
 func (dt *DBTask) Init() {
 	lib.Logger.Info("db init")
-	dt.client = influxdb2.NewClient("http://localhost:8086", "eqZDJyLTi0trnt09RxtkrfinbxeHMofrTvWfzSka1TMSGxrXJjNDlazqAlDIJkXwnmkD7ltx03UiyQmuM2j5Wg==")
-	dt.writeAPI = dt.client.WriteAPIBlocking("homeiot", "homeiot3")
+	dt.client = influxdb2.NewClientWithOptions(dt.config.Host, dt.config.Token, influxdb2.DefaultOptions().SetBatchSize(100))
+	dt.writeAPI = dt.client.WriteAPI(dt.config.Org, dt.config.Bucket)
 }
 func (dt *DBTask) Disconnect() {
 	lib.Logger.Info("db disconnected")
@@ -67,11 +68,15 @@ func (dt *DBTask) WriteSensorData(ch <-chan mqtt.Message) {
 				if sc.date.Add(1 * time.Second).After(now) {
 					continue
 				}
+				if reflect.DeepEqual(dt.sensorDataCache[topic].payload, msg.Payload()) {
+					continue
+				}
 			}
 
 			dt.sensorDataCache[topic] = &sensorDataCache{
 				macaddress: addr.(string),
 				date:       now,
+				payload:    msg.Payload(),
 			}
 			tags = map[string]string{"macaddress": addr.(string)}
 		} else if regState.Match([]byte(msg.Topic())) {
@@ -86,11 +91,6 @@ func (dt *DBTask) WriteSensorData(ch <-chan mqtt.Message) {
 			tags,
 			payload,
 			now)
-		// write point immediately
-		err := dt.writeAPI.WritePoint(context.Background(), p)
-		if err != nil {
-			lib.Logger.Fatal(err.Error())
-			continue
-		}
+		dt.writeAPI.WritePoint(p)
 	}
 }
