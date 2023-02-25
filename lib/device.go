@@ -8,6 +8,8 @@ import (
 
 const (
 	switchbotUUID    = "fd3d"
+	nordicUUID       = "0d00"
+	m5stackEnvUUID   = "2301"
 	switchbotBot     = 0x48
 	switchbotMeter   = 0x54
 	switchbotMotion  = 0x73
@@ -71,18 +73,52 @@ type Contact struct {
 	RipUTC          int32 `json:"ripUTC"`
 	HalUTC          int32 `json:"halUTC"`
 	EntranceCount   byte  `json:"entranceCount"`
-	GooutCount      byte  `json:"gooutCount"`
+	GooutCount      byte  `json:"goOutCount"`
 	ButtonPushCount byte  `json:"buttonPushCount"`
+}
+type InRoom struct {
+	Device
+	DeviceType string `json:"deviceType"`
+	PushCount  byte   `json:"pushCount"`
+}
+type M5StackEnv struct {
+	Device
+	DeviceType string `json:"deviceType"`
+	Range      int32  `json:"range"`
 }
 
 // FIXME
-type Sensor interface{}
+type Sensor interface {
+	DeviceName() string
+}
 
-func NewDevice(addr string, sd ble.ServiceData) *Device {
-	return &Device{Addr: addr, Rawdata: fmt.Sprintf("%x", sd.Data)}
+func (d *Bot) DeviceName() string {
+	return "bot"
+}
+
+func (d *Curtain) DeviceName() string {
+	return "curtain"
+}
+func (d *Contact) DeviceName() string {
+	return "contact"
+}
+func (d *Motion) DeviceName() string {
+	return "motion"
+}
+func (d *Meter) DeviceName() string {
+	return "meter"
+}
+func (d *M5StackEnv) DeviceName() string {
+	return "env"
+}
+func (d *InRoom) DeviceName() string {
+	return "inroom"
+}
+func NewDevice(addr string, d []byte) *Device {
+	return &Device{Addr: addr, Rawdata: fmt.Sprintf("%x", d)}
 }
 func NewSwitchbotDevice(addr string, sd ble.ServiceData) *SwitchbotDevice {
-	return &SwitchbotDevice{Device: *NewDevice(addr, sd),
+	return &SwitchbotDevice{Device: *NewDevice(addr, sd.Data),
 		DeviceType: string(sd.Data[0] & 0b01111111),
 		Battery:    sd.Data[2] & 0b01111111,
 	}
@@ -151,8 +187,22 @@ func NewContact(addr string, sd ble.ServiceData) *Contact {
 		ButtonPushCount: sd.Data[8] & 0b00001111,
 	}
 }
+func NewM5StackEnv(addr string, sd ble.ServiceData) *M5StackEnv {
+	return &M5StackEnv{
+		Device:     *NewDevice(addr, sd.Data),
+		Range:      int32(sd.Data[1])<<8 + int32(sd.Data[2]),
+		DeviceType: string(sd.Data[0] & 0b01111111),
+	}
+}
+func NewInRoom(addr string, sd []byte) *InRoom {
+	return &InRoom{
+		Device:     *NewDevice(addr, sd),
+		PushCount:  sd[0],
+		DeviceType: "X",
+	}
+}
 func GetDevice(addr string, sd ble.ServiceData) Sensor {
-	if sd.UUID.String() == switchbotUUID {
+	if sd.UUID.String() == switchbotUUID || sd.UUID.String() == nordicUUID || sd.UUID.String() == m5stackEnvUUID {
 		switch sd.Data[0] {
 		case switchbotBot:
 			return NewBot(addr, sd)
@@ -164,6 +214,8 @@ func GetDevice(addr string, sd ble.ServiceData) Sensor {
 			return NewMotion(addr, sd)
 		case switchbotContact:
 			return NewContact(addr, sd)
+		case m5stackEnv:
+			return NewM5StackEnv(addr, sd)
 		default:
 			return nil
 		}

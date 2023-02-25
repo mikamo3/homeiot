@@ -14,7 +14,7 @@ func TestGetDevice(t *testing.T) {
 			Data: []byte{0x48, 0xc0, 0x5b, 0x80},
 		},
 		{
-			UUID: ble.UUID16(0xfd3d),
+			UUID: ble.UUID16(0x0d00),
 			Data: []byte{0x63, 0xc0, 0x36, 0x49, 0x11, 0x02},
 		},
 		{
@@ -22,12 +22,16 @@ func TestGetDevice(t *testing.T) {
 			Data: []byte{0x54, 0x00, 0x64, 0x03, 0x95, 0x2d},
 		},
 		{
-			UUID: ble.UUID16(0xfd3d),
+			UUID: ble.UUID16(0x0d00),
 			Data: []byte{0x73, 0xc0, 0x64, 0x00, 0x17, 0x0a},
 		},
 		{
 			UUID: ble.UUID16(0xfd3d),
 			Data: []byte{0x64, 0x00, 0x64, 0x01, 0x07, 0xab, 0x08, 0x75, 0x14},
+		},
+		{
+			UUID: ble.UUID16(0x2301),
+			Data: []byte{0x5a, 0x00, 0xcd},
 		},
 	}
 	tests := []struct {
@@ -122,6 +126,18 @@ func TestGetDevice(t *testing.T) {
 				RipState:        0,
 				RipUTC:          1963,
 				ScopeTested:     0}},
+		{name: "M5StackEnv",
+
+			addr:        "00:11:22:33:44:55",
+			serviceData: rawdata[5],
+			want: &M5StackEnv{
+				Device: Device{
+					Addr:    "00:11:22:33:44:55",
+					Rawdata: "5a00cd",
+				},
+				Range: 0xcd,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
