@@ -79,6 +79,7 @@ func (dt *DBTask) WriteSensorData(ch <-chan mqtt.Message) {
 				payload:    msg.Payload(),
 			}
 			tags = map[string]string{"macaddress": addr.(string)}
+			delete(payload, "macaddress")
 		} else if regState.Match([]byte(msg.Topic())) {
 			topic = regState.ReplaceAllString(msg.Topic(), "")
 			tags = nil
