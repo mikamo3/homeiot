@@ -65,7 +65,7 @@ func (dt *DBTask) WriteSensorData(ch <-chan mqtt.Message) {
 				continue
 			}
 			if sc, ok := dt.sensorDataCache[topic]; ok && sc != nil {
-				if sc.date.Add(1 * time.Second).After(now) {
+				if sc.date.Add(5 * time.Second).After(now) {
 					continue
 				}
 				if reflect.DeepEqual(dt.sensorDataCache[topic].payload, msg.Payload()) {
@@ -79,6 +79,7 @@ func (dt *DBTask) WriteSensorData(ch <-chan mqtt.Message) {
 				payload:    msg.Payload(),
 			}
 			tags = map[string]string{"macaddress": addr.(string)}
+			delete(payload, "macaddress")
 		} else if regState.Match([]byte(msg.Topic())) {
 			topic = regState.ReplaceAllString(msg.Topic(), "")
 			tags = nil
