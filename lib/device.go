@@ -80,11 +80,13 @@ type InRoom struct {
 	Device
 	DeviceType string `json:"deviceType"`
 	PushCount  byte   `json:"pushCount"`
+	SendCount  byte   `json:"count"`
 }
 type M5StackEnv struct {
 	Device
 	DeviceType string `json:"deviceType"`
 	Range      int32  `json:"range"`
+	SendCount  byte   `json:"count"`
 }
 
 // FIXME
@@ -190,8 +192,9 @@ func NewContact(addr string, sd ble.ServiceData) *Contact {
 func NewM5StackEnv(addr string, sd ble.ServiceData) *M5StackEnv {
 	return &M5StackEnv{
 		Device:     *NewDevice(addr, sd.Data),
-		Range:      int32(sd.Data[1])<<8 + int32(sd.Data[2]),
 		DeviceType: string(sd.Data[0] & 0b01111111),
+		Range:      int32(sd.Data[1])<<8 + int32(sd.Data[2]),
+		SendCount:  sd.Data[3],
 	}
 }
 func NewInRoom(addr string, sd []byte) *InRoom {
