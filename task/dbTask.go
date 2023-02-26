@@ -65,7 +65,7 @@ func (dt *DBTask) WriteSensorData(ch <-chan mqtt.Message) {
 				continue
 			}
 			if sc, ok := dt.sensorDataCache[topic]; ok && sc != nil {
-				if sc.date.Add(1 * time.Second).After(now) {
+				if sc.date.Add(5 * time.Second).After(now) {
 					continue
 				}
 				if reflect.DeepEqual(dt.sensorDataCache[topic].payload, msg.Payload()) {
