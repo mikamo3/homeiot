@@ -135,7 +135,8 @@ func TestGetDevice(t *testing.T) {
 					Addr:    "00:11:22:33:44:55",
 					Rawdata: "5a00cd",
 				},
-				Range: 0xcd,
+				DeviceType: "Z",
+				Range:      0xcd,
 			},
 		},
 	}
