@@ -51,6 +51,7 @@ func loadConfig(configPath string) (*task.Config, error) {
 func main() {
 	lib.Logger.Info("start")
 	defer lib.Logger.Info("end")
+	defer lib.Logger.Sync()
 	configPath, err := parseFlags()
 	if err != nil {
 		lib.Logger.Fatal(err.Error())
