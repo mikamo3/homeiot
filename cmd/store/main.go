@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"homeiot_bluetooth/lib"
 	"homeiot_bluetooth/task"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -53,6 +52,7 @@ func main() {
 
 	lib.Logger.Info("start")
 	defer lib.Logger.Info("end")
+	defer lib.Logger.Sync()
 	configPath, err := parseFlags()
 	if err != nil {
 		lib.Logger.Fatal(err.Error())
@@ -65,19 +65,20 @@ func main() {
 	defer stop()
 	mqttTask, err := task.NewMQTTTask(config.MQTTConfig)
 	if err != nil {
-		log.Fatalln(err)
+		lib.Logger.Fatal(err.Error())
 	}
 	defer mqttTask.Disconnect()
 	if err := mqttTask.Subscribe("adv/+"); err != nil {
-		log.Fatalln(err)
+		lib.Logger.Fatal(err.Error())
 	}
 	if err := mqttTask.Subscribe("state/+"); err != nil {
-		log.Fatalln(err)
+		lib.Logger.Fatal(err.Error())
 	}
 	dbTask := task.NewDBTask(config.DBConfig)
 	defer dbTask.Disconnect()
 	go dbTask.WriteSensorData(mqttTask.MessageCh)
 
 	<-ctx.Done()
-	log.Print("done")
+
+	lib.Logger.Info("done")
 }
