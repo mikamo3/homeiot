@@ -13,8 +13,3 @@ type DBConfig struct {
 	Org    string `yaml:"org"`
 	Bucket string `yaml:"bucket"`
 }
-type Config struct {
-	*BleConfig  `yaml:"bluetooth"`
-	*MQTTConfig `yaml:"mqtt"`
-	*DBConfig   `yaml:"db"`
-}
