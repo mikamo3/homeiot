@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"homeiot_bluetooth/lib"
 	"log"
+	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"go.uber.org/zap"
@@ -32,10 +33,21 @@ func (mt *MQTTTask) Init() error {
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(mt.config.Host)
 	mt.client = mqtt.NewClient(opts)
-	if token := mt.client.Connect(); token.Wait() && token.Error() != nil {
-		return token.Error()
+	retryCount := 0
+	var token mqtt.Token
+	for retryCount < MAX_RETRIES {
+		if token = mt.client.Connect(); token.Wait() && token.Error() != nil {
+			retryCount++
+			if retryCount == MAX_RETRIES {
+				continue
+			}
+			lib.Logger.Warn(token.Error().Error())
+			time.Sleep(RETRY_WAIT_SEC)
+		} else {
+			break
+		}
 	}
-	return nil
+	return token.Error()
 }
 
 func (mt *MQTTTask) Disconnect() {
