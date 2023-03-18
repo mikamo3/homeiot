@@ -13,6 +13,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type scanConfig struct {
+	*task.BleConfig  `yaml:"bluetooth"`
+	*task.MQTTConfig `yaml:"mqtt"`
+}
+
 func validateConfigPath(path string) error {
 	s, err := os.Stat(path)
 	if err != nil {
@@ -32,11 +37,11 @@ func parseFlags() (string, error) {
 	}
 	return configPath, nil
 }
-func loadConfig(configPath string) (*task.Config, error) {
+func loadConfig(configPath string) (*scanConfig, error) {
 	if err := validateConfigPath(configPath); err != nil {
 		return nil, err
 	}
-	config := &task.Config{}
+	config := &scanConfig{}
 	file, err := os.Open(configPath)
 	if err != nil {
 		return nil, err
