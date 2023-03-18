@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"homeiot_bluetooth/lib"
+	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/go-ble/ble"
@@ -45,14 +46,27 @@ func (bt *BleTask) Init() error {
 		ScanningFilterPolicy: 0x00,   // 0x00: accept all, 0x01: ignore non-white-listed.
 	})
 	d, err := linux.NewDevice(options)
-	//d, err := linux.NewDevice()
 	if err != nil {
 		return err
 	}
 	ble.SetDefaultDevice(d)
 
 	lib.Logger.Info("connect inroom device")
-	bt.client, err = ble.Dial(bt.context, ble.NewAddr(bt.config.InroomAddr))
+	retryCount := 0
+	for retryCount < MAX_RETRIES {
+		bt.client, err = ble.Dial(bt.context, ble.NewAddr(bt.config.InroomAddr))
+		if err != nil {
+			retryCount++
+			if retryCount == MAX_RETRIES {
+				continue
+			}
+			lib.Logger.Warn(err.Error())
+			time.Sleep(RETRY_WAIT_SEC)
+			continue
+		} else {
+			break
+		}
+	}
 	if err != nil {
 		return err
 	}
