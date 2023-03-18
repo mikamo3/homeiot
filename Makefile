@@ -10,10 +10,10 @@ clean:
 test:
 	cd lib && go test
 
-build-scan:
+build-amd64-scan:
 	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o $(BINDIR)/$(PROJECT_NAME)_scan cmd/scan/main.go
 
-build-store:
+build-amd64-store:
 	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o $(BINDIR)/$(PROJECT_NAME)_store cmd/store/main.go
 
 build: clean build-scan build-store
